@@ -1,0 +1,18 @@
+[project]
+name = "aios-enrichment"
+version = "0.1.0"
+description = "Enrichment pipeline — PII scrub, embedding, graph write, vector index"
+requires-python = ">=3.11"
+
+dependencies = [
+    "aios-core",
+    "aios-memory",
+    "redis>=5.0",
+    "presidio-analyzer>=2.0",
+    "presidio-anonymizer>=2.0",
+    "spacy>=3.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

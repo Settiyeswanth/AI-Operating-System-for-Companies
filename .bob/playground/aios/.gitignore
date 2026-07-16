@@ -1,0 +1,74 @@
+﻿# ════════════════════════════════════════════════════════
+# AI Operating System for Companies — .gitignore
+# ════════════════════════════════════════════════════════
+
+# ── NEVER commit secrets or credentials ──────────────────
+.env
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*_rsa
+*_rsa.pub
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ── Virtual environments ──────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+
+# ── uv ────────────────────────────────────────────────────
+uv.lock
+
+# ── Testing ───────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── IDEs ──────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Local runtime artefacts ───────────────────────────────
+.aios-local-logs/
+.aios-local-pids/
+*.log
+*.pid
+
+# ── Database files ────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ── Bob internal / AI assistant workspace files ───────────
+.bob/
+*.json
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Temp / Build ──────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.bak
+node_modules/

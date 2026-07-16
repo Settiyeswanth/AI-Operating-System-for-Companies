@@ -1,0 +1,19 @@
+[project]
+name = "aios-memory"
+version = "0.1.0"
+description = "Knowledge Graph, Vector Store, and Event Ledger service"
+requires-python = ">=3.11"
+
+dependencies = [
+    "aios-core",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "neo4j>=5.0",
+    "qdrant-client>=1.9",
+    "rank-bm25>=0.2",
+    "redis>=5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,19 @@
+[tool.uv.workspace]
+members = ["packages/*", "services/*"]
+
+[project]
+name = "aios"
+version = "0.1.0"
+description = "AI Operating System for Companies"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

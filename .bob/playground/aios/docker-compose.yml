@@ -1,0 +1,27 @@
+# AI OS for Companies — docker-compose.yml
+#
+# ══════════════════════════════════════════════════════════════════
+#  NO DOCKER REQUIRED IN THIS CONFIGURATION
+# ══════════════════════════════════════════════════════════════════
+#
+# All infrastructure runs as managed cloud services:
+#
+#   Neo4j    → Neo4j AuraDB Free     (cloud.neo4j.com)
+#   Qdrant   → Qdrant Cloud Free     (cloud.qdrant.io)
+#   Redis    → IBM Cloud Databases   (cloud.ibm.com)
+#   LLM      → IBM watsonx.ai        (cloud.ibm.com)
+#
+# Application services run as local Python processes:
+#   .\run-local.ps1     (Windows)
+#   ./run-local.sh      (Mac / Linux)
+#
+# See IBM-CLOUD-SETUP.md for step-by-step setup of all cloud services.
+# ══════════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+# This file intentionally contains no services.
+# All services use cloud-managed infrastructure or local Python processes.
+
+services: {}
+volumes: {}

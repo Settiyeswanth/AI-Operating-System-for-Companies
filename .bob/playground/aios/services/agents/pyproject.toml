@@ -1,0 +1,18 @@
+[project]
+name = "aios-agents"
+version = "0.1.0"
+description = "QueryAgent, MonitorAgent, SynthesisAgent, VerificationAgent"
+requires-python = ">=3.11"
+
+dependencies = [
+    "aios-core",
+    "aios-memory",
+    "langgraph>=0.1.0",
+    "langchain-core>=0.2.0",
+    "redis>=5.0",
+    "apscheduler>=3.10",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

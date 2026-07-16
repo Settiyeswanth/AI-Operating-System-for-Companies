@@ -1,0 +1,16 @@
+[project]
+name = "aios-ingestion"
+version = "0.1.0"
+description = "Normalization and Entity Resolution pipeline"
+requires-python = ">=3.11"
+
+dependencies = [
+    "aios-core",
+    "aios-memory",
+    "rapidfuzz>=3.0",
+    "redis>=5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
