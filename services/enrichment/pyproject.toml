@@ -13,6 +13,9 @@ dependencies = [
     "spacy>=3.7",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["enrichment"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

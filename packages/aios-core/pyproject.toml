@@ -11,6 +11,9 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["aios_core"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

@@ -75,17 +75,25 @@ class AccessTags(BaseModel):
         """
         Returns True if the user is permitted to see this artifact.
         Rule: deny if any condition fails. Exclusions are never disclosed.
+
+        Scope rules:
+          - "*" in user_scopes is a superuser catch-all that bypasses min_scope checks.
+        PII grant rules:
+          - "pii" satisfies pii_flag (exact match).
+          - "pii:<qualifier>" (e.g. "pii:own-team") also satisfies pii_flag (prefix match).
         """
-        # Explicit deny list takes priority
+        # Explicit deny list takes priority — checked before any other rule
         if user_id in self.restricted_to:
             return False
 
-        # PII requires explicit grant
-        if self.pii_flag and "pii" not in user_grants:
+        # PII requires an explicit grant: exact "pii" or any grant starting with "pii:"
+        if self.pii_flag and not any(
+            g == "pii" or g.startswith("pii:") for g in user_grants
+        ):
             return False
 
-        # Minimum scope check
-        if self.min_scope and self.min_scope not in user_scopes:
+        # Minimum scope check — "*" is a superuser wildcard that bypasses scope requirement
+        if self.min_scope and "*" not in user_scopes and self.min_scope not in user_scopes:
             return False
 
         return True

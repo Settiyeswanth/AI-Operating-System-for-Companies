@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["packages/*", "services/*"]
+members = ["packages/*", "services/*", "tests"]
 
 [project]
 name = "aios"
@@ -17,3 +17,13 @@ select = ["E", "F", "I", "UP"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.uv.sources]
+aios-core       = { workspace = true }
+aios-memory     = { workspace = true }
+aios-ingestion  = { workspace = true }
+aios-enrichment = { workspace = true }
+aios-connectors = { workspace = true }
+aios-gateway    = { workspace = true }
+aios-interface  = { workspace = true }
+aios-agents     = { workspace = true }

@@ -14,6 +14,9 @@ dependencies = [
     "redis>=5.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["memory"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

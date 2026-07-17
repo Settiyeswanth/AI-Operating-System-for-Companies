@@ -1,18 +1,18 @@
 [project]
-name = "aios-ingestion"
+name = "aios-interface"
 version = "0.1.0"
-description = "Normalization and Entity Resolution pipeline"
+description = "Chat API, alert webhooks, and draft endpoints"
 requires-python = ">=3.11"
 
 dependencies = [
     "aios-core",
-    "aios-memory",
-    "rapidfuzz>=3.0",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
     "redis>=5.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["ingestion"]
+packages = ["interface"]
 
 [build-system]
 requires = ["hatchling"]
