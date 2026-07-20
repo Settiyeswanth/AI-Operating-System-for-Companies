@@ -125,20 +125,45 @@ class EntityResolutionIndex:
         source_system: str,
         source_id: str,
     ) -> str:
-        """Create a new canonical Person entity and map the source ID to it."""
-        canonical_id = str(uuid.uuid4())
+        """
+        Create a new canonical Person entity and map the source ID to it.
+
+        Idempotent on canonical_email: if a Person with this email already
+        exists (e.g. from a concurrent call), reuses that canonical_id rather
+        than creating a duplicate.  This closes the race condition where two
+        concurrent events for the same new actor each see a cache miss in
+        lookup_by_email() and both attempt creation.
+        """
         import json
+        normalized_email = (canonical_email or "").lower().strip()
+        new_id = str(uuid.uuid4())
+
         with self._conn() as c:
+            # Attempt insert — silently ignored if email already exists
             c.execute(
-                "INSERT OR IGNORE INTO canonical_persons (canonical_id, canonical_email, display_names) VALUES (?, ?, ?)",
-                (canonical_id, (canonical_email or "").lower().strip(),
+                "INSERT OR IGNORE INTO canonical_persons "
+                "(canonical_id, canonical_email, display_names) VALUES (?, ?, ?)",
+                (new_id, normalized_email,
                  json.dumps([display_name] if display_name else [])),
             )
+            c.commit()
+
+            # Read back the canonical_id that actually owns this email
+            # (may be new_id we just inserted, or a pre-existing one)
+            row = c.execute(
+                "SELECT canonical_id FROM canonical_persons WHERE canonical_email=?",
+                (normalized_email,),
+            ).fetchone()
+            canonical_id = row["canonical_id"] if row else new_id
+
+            # Map source → canonical (REPLACE handles re-runs safely)
             c.execute(
-                "INSERT OR REPLACE INTO entity_map (source_system, source_id, canonical_id, confidence) VALUES (?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO entity_map "
+                "(source_system, source_id, canonical_id, confidence) VALUES (?, ?, ?, ?)",
                 (source_system, source_id, canonical_id, DETERMINISTIC_CONFIDENCE),
             )
             c.commit()
+
         return canonical_id
 
     def register_mapping(
