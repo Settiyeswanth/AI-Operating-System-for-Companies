@@ -177,10 +177,40 @@ def test_lookup_by_email_case_insensitive(er_index: EntityResolutionIndex):
 
 
 def test_create_canonical_person_is_idempotent(er_index: EntityResolutionIndex):
-    """Creating the same canonical person twice must not create duplicates."""
+    """
+    Creating the same canonical person twice must not create duplicates.
+
+    Regression test for: https://github.com/Settiyeswanth/AI-Operating-System-for-Companies
+    Root cause that was fixed: canonical_email lacked a UNIQUE constraint so
+    INSERT OR IGNORE fired only on the canonical_id PRIMARY KEY — meaning two
+    calls with the same email but fresh UUIDs each inserted a separate row.
+    The fix adds UNIQUE on canonical_email (both inline in DDL and via
+    CREATE UNIQUE INDEX), so only one row can exist per email at DB level.
+    """
+    import sqlite3
+
     cid1 = er_index.create_canonical_person("bob@test.com", "Bob", "github", "bob-gh-1")
-    # Second call with different source_id but same email
+    # Second call — same email, different source system and source_id.
     cid2 = er_index.create_canonical_person("bob@test.com", "Bob", "linear", "bob-lin-1")
-    # They should both map to SOME canonical ID via email lookup
+
+    # ── Strong assertion 1: both calls must return THE SAME canonical_id ──
+    assert cid1 == cid2, (
+        f"Duplicate email produced two different canonical IDs: {cid1!r} vs {cid2!r}. "
+        "check that canonical_email has a UNIQUE constraint in the DDL."
+    )
+
+    # ── Strong assertion 2: exactly ONE row in canonical_persons ──
+    with sqlite3.connect(er_index.db_path) as conn:
+        row_count = conn.execute(
+            "SELECT COUNT(*) FROM canonical_persons WHERE canonical_email=?",
+            ("bob@test.com",),
+        ).fetchone()[0]
+    assert row_count == 1, (
+        f"Expected 1 row in canonical_persons for bob@test.com, got {row_count}. "
+        "Duplicate rows mean the UNIQUE constraint is not enforced at DB level."
+    )
+
+    # ── Weak assertion (kept for backwards compatibility) ──
     email_cid = er_index.lookup_by_email("bob@test.com")
     assert email_cid is not None
+    assert email_cid == cid1

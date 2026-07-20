@@ -64,13 +64,21 @@ class EntityResolutionIndex:
             c.execute("""
                 CREATE TABLE IF NOT EXISTS canonical_persons (
                     canonical_id TEXT PRIMARY KEY,
-                    canonical_email TEXT,
+                    canonical_email TEXT UNIQUE,
                     display_names TEXT DEFAULT '[]',
                     created_at TEXT NOT NULL DEFAULT (datetime('now'))
                 )
             """)
+            # Explicit unique index so that INSERT OR IGNORE fires on email
+            # collisions, not only on the canonical_id PRIMARY KEY.
+            # Also acts as a migration guard for existing DBs created before
+            # the UNIQUE keyword was added to the DDL above: SQLite allows
+            # CREATE UNIQUE INDEX on a column that lacks the UNIQUE keyword
+            # in its column definition, but if the table was recreated with
+            # the new DDL the inline UNIQUE already implies an index —
+            # IF NOT EXISTS makes this safe either way.
             c.execute("""
-                CREATE INDEX IF NOT EXISTS idx_email
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_email_unique
                 ON canonical_persons (canonical_email)
             """)
             c.execute("""
@@ -129,17 +137,33 @@ class EntityResolutionIndex:
         Create a new canonical Person entity and map the source ID to it.
 
         Idempotent on canonical_email: if a Person with this email already
-        exists (e.g. from a concurrent call), reuses that canonical_id rather
-        than creating a duplicate.  This closes the race condition where two
-        concurrent events for the same new actor each see a cache miss in
-        lookup_by_email() and both attempt creation.
+        exists, reuses that canonical_id rather than creating a duplicate.
+
+        Correctness guarantee (DB-level):
+          canonical_email is declared UNIQUE (both inline in the DDL and via
+          CREATE UNIQUE INDEX idx_email_unique). Therefore INSERT OR IGNORE
+          fires on an email collision — not just on a canonical_id PK
+          collision. This means concurrent callers that both see a cache miss
+          in lookup_by_email() cannot each insert a separate row for the same
+          email: exactly one INSERT wins; the other is silently ignored; both
+          then read back the same winning canonical_id.
+
+        No NULL collision: NULL is never equal to NULL in SQL, so two rows
+        with canonical_email = NULL do not violate the UNIQUE constraint.
+        Actors with no email each get their own canonical_id row with NULL
+        email, which is the correct behaviour (we cannot merge anonymous actors
+        by email).
         """
         import json
-        normalized_email = (canonical_email or "").lower().strip()
+        normalized_email = (canonical_email or "").lower().strip() or None
         new_id = str(uuid.uuid4())
 
         with self._conn() as c:
-            # Attempt insert — silently ignored if email already exists
+            # INSERT OR IGNORE is now enforced at DB level via UNIQUE on
+            # canonical_email.  If a row with this email already exists the
+            # insert is silently skipped; new_id is discarded.
+            # If canonical_email is NULL (no email) the insert always
+            # proceeds because UNIQUE does not constrain NULLs in SQLite.
             c.execute(
                 "INSERT OR IGNORE INTO canonical_persons "
                 "(canonical_id, canonical_email, display_names) VALUES (?, ?, ?)",
@@ -148,13 +172,17 @@ class EntityResolutionIndex:
             )
             c.commit()
 
-            # Read back the canonical_id that actually owns this email
-            # (may be new_id we just inserted, or a pre-existing one)
-            row = c.execute(
-                "SELECT canonical_id FROM canonical_persons WHERE canonical_email=?",
-                (normalized_email,),
-            ).fetchone()
-            canonical_id = row["canonical_id"] if row else new_id
+            if normalized_email is not None:
+                # Read back the canonical_id that won the race.
+                row = c.execute(
+                    "SELECT canonical_id FROM canonical_persons "
+                    "WHERE canonical_email=?",
+                    (normalized_email,),
+                ).fetchone()
+                canonical_id = row["canonical_id"] if row else new_id
+            else:
+                # No email: the row we just inserted is the definitive record.
+                canonical_id = new_id
 
             # Map source → canonical (REPLACE handles re-runs safely)
             c.execute(
